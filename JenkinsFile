@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven'
+    }
+    environment {
+        SONAR_HOME= tool 'sonar-scanner'
+    }
+    stages {
+        stage('Checkout and Compile Code') {
+            steps {
+                git credentialsId: 'git-cred', url: 'https://github.com/sylvestra81/Project-A29.git'
+                sh 'mvn compile'  // Compile only
+            }
+        }
+        stage('Test') {
+            steps {
+                sh "mvn test"
+            }
+        }
+        stage('File system scan with Trivy') {
+            steps {
+                sh 'trivy fs --format table -o trivy-fs-report.html .'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh '''$SONAR_HOME/bin/sonar-scanner -Dsonar.projectName=Project-A29 -Dsonar.projectKey=Project-A29 \
+                            -Dsonar.java.binaries=target/classes'''  // Point to compiled code
+                }
+            }
+        }
+        stage('Quality Gate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn install'  // Final build after quality check
+            }
+        }
+        stage('Publish to Nexus') {
+            steps {
+                withMaven(globalMavenSettingsConfig: 'global-settings', jdk: '', maven: 'maven', mavenSettingsConfig: '', traceability: true) {
+                    sh 'mvn deploy'
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t sylvestra/project-a29 .'
+                }
+            }
+        }
+        stage('Docker Image scan') {
+            steps {
+                sh 'trivy image --format json -o trivy-image-report.html sylvestra/project-a29'
+            }
+        }
+        stage('Push image to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'sly', variable: 'dockerpwd')]) {
+                        sh 'docker login -u sylvestra -p ${dockerpwd}'
+                        sh 'docker push sylvestra/project-a29'
+                    }
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.90.37:6443') {
+                    sh 'kubectl -f deployment.yaml'
+                }
+            }
+        }
+        stage('Verify the Deployment') {
+            steps {
+                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.90.37:6443') {
+                    sh 'kubectl get pods -n webapps'
+                    sh 'kubectl get svc -n webapps'
+                }
+            }
+        }
+    }
+}
