@@ -7,9 +7,14 @@ phases:
       - apt-get update
       - apt-get install -y maven
 
+  pre_build:
+    commands:
+      - echo Logging in to GitHub
+      - git clone https://github.com/sylvestra81/aws-codepipeline.git
+
   build:
     commands:
-      - echo Building the project
+      - echo Build started
       - mvn clean install -DskipTests
 
 artifacts:
