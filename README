@@ -1,11 +1,11 @@
 BoardgameListingWebApp
 
 Description
-Board Game Database Full-Stack Web Application. I'd like to present an overview of our web application that manages board games and their reviews. The application allows anyone to browse and view lists of board games along with their respective reviews. However, to add or modify content, user authentication is required.
-
-                                                Users can log in to add new board games and submit reviews.
-                                                Managers, in addition to the user privileges, have elevated permissions that allow them to edit or delete reviews.
-                                                This access control ensures that the content remains organized while allowing appropriate users to contribute and manage reviews effectively.
+Board Game Database Full-Stack Web Application. I'd like to present an overview of our web application that manages board games and their reviews.
+The application allows anyone to browse and view lists of board games along with their respective reviews.
+However, to add or modify content, user authentication is required. Users can log in to add new board games and submit reviews.
+Managers, in addition to the user privileges, have elevated permissions that allow them to edit or delete reviews.
+This access control ensures that the content remains organized while allowing appropriate users to contribute and manage reviews effectively.
 
 Technologies
 
